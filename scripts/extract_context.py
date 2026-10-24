@@ -18,11 +18,14 @@ SETTING = ROOT / "setting"
 EPISODES = ROOT / "episodes"
 TRACKER = ROOT / "tracker" / "progress.md"
 
-# 아크 경계. 2·3아크 구간이 확정되면 여기만 고친다.
+# 부 경계 (v2, 480화). 06_스토리_아크.md의 "## N부" 제목과 맞춘다.
 ARCS = [
-    (1, 40, "1아크"),
-    (41, 160, "2아크"),
-    (161, 280, "3아크"),
+    (1, 60, "1부"),
+    (61, 150, "2부"),
+    (151, 250, "3부"),
+    (251, 360, "4부"),
+    (361, 440, "5부"),
+    (441, 480, "6부"),
 ]
 
 
@@ -54,7 +57,7 @@ def arc_of(ep: int) -> str:
     for lo, hi, name in ARCS:
         if lo <= ep <= hi:
             return name
-    return "3아크"
+    return "6부"
 
 
 def range_hits(cell: str, ep: int) -> bool:
@@ -117,6 +120,8 @@ def main() -> int:
     ap.add_argument("--chars", default="", help="등장 인물 이름, 쉼표 구분 (04_인물.md의 ### 제목 일부)")
     ap.add_argument("--invent", default="", help="발명 번호, 쉼표 구분 (05의 5.2 표 # 열)")
     ap.add_argument("--world", default="", help="세계관 절 번호, 쉼표 구분 (예: 2.4,2.5)")
+    ap.add_argument("--souls", default="", help="전생자 이름, 쉼표 구분 (09_전생자.md의 ### 제목 일부). 9.2 공통 규칙은 함께 출력")
+    ap.add_argument("--appraise", action="store_true", help="감정사·상태창 규칙(03의 3.3) 포함")
     args = ap.parse_args()
     ep = args.ep
 
@@ -155,6 +160,15 @@ def main() -> int:
         nums = {s.strip() for s in args.invent.split(",") if s.strip()}
         rows = table_rows(section(inv, "5.2", level=2), lambda c: c and c[0] in nums)
         emit("05_마도공학_발명.md / 해당 발명", "\n\n".join(rows) or "(해당 행 없음)")
+
+    if args.souls:
+        souls = read(SETTING / "09_전생자.md")
+        emit("09_전생자.md / 9.2 공통 규칙", section(souls, r"9\.2", level=2))
+        for name in [s.strip() for s in args.souls.split(",") if s.strip()]:
+            emit(f"09_전생자.md / {name}", section(souls, re.escape(name), level=3))
+
+    if args.appraise:
+        emit("03_주인공_레온.md / 3.3 감정사와 상태창", section(read(SETTING / "03_주인공_레온.md"), r"3\.3", level=2))
 
     if args.world:
         world = read(SETTING / "02_세계관_왕국.md")
